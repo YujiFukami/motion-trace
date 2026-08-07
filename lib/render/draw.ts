@@ -1,0 +1,52 @@
+import type { Point2D } from "../motion/types";
+import type { TrailSegment } from "../trail/trailBuffer";
+
+export function drawTrailSegment(
+  ctx: CanvasRenderingContext2D,
+  segment: TrailSegment,
+  currentTime: number,
+  trailLifetime: number,
+  lineWidth: number,
+  color: string,
+): void {
+  const alpha = Math.max(
+    0,
+    Math.min(1, 1 - (currentTime - segment.createdAt) / trailLifetime),
+  );
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(segment.p1.x, segment.p1.y);
+  ctx.lineTo(segment.p2.x, segment.p2.y);
+  ctx.stroke();
+}
+
+export function drawCurrentLine(
+  ctx: CanvasRenderingContext2D,
+  p1: Point2D,
+  p2: Point2D,
+  lineWidth: number,
+  color: string,
+): void {
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.stroke();
+}
+
+export function drawPointMarker(
+  ctx: CanvasRenderingContext2D,
+  p: Point2D,
+  radius: number,
+  color: string,
+): void {
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
