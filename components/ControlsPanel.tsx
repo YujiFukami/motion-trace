@@ -13,6 +13,8 @@ export interface ControlsPanelProps {
   onRecordIntervalChange: (value: number) => void;
   trailLifetime: number;
   onTrailLifetimeChange: (value: number) => void;
+  showGuides: boolean;
+  onShowGuidesChange: (value: boolean) => void;
 }
 
 export default function ControlsPanel({
@@ -24,6 +26,8 @@ export default function ControlsPanel({
   onRecordIntervalChange,
   trailLifetime,
   onTrailLifetimeChange,
+  showGuides,
+  onShowGuidesChange,
 }: ControlsPanelProps) {
   const { t } = useLocale();
   return (
@@ -80,6 +84,16 @@ export default function ControlsPanel({
           className="w-20 rounded-md border border-white/10 bg-black/40 px-2 py-1"
         />
         {t("controls.seconds")}
+      </label>
+
+      <label className="flex items-center gap-2 text-sm text-zinc-300">
+        <input
+          type="checkbox"
+          checked={showGuides}
+          onChange={(e) => onShowGuidesChange(e.target.checked)}
+          className="h-4 w-4 cursor-pointer rounded border-white/10 bg-black/40"
+        />
+        {t("controls.showGuides")}
       </label>
     </div>
   );

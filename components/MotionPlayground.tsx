@@ -18,6 +18,7 @@ import {
   parseSceneFile,
   serializeScene,
 } from "@/lib/scene/sceneFile";
+import { decodeSceneFromParam, encodeSceneToParam } from "@/lib/scene/shareLink";
 import { useLocale } from "@/lib/i18n/LocaleContext";
 
 type PopoverState =
@@ -36,6 +37,7 @@ export default function MotionPlayground() {
   const [resetSignal, setResetSignal] = useState(0);
   const [clearTrailSignal, setClearTrailSignal] = useState(0);
   const [colors, setColors] = useState<ColorSettings>(DEFAULT_COLORS);
+  const [showGuides, setShowGuides] = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -46,6 +48,24 @@ export default function MotionPlayground() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Load a shared scene from ?s=<encoded> if present, then clean the URL so
+  // further edits aren't tied to the stale link.
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("s");
+    if (!param) return;
+    try {
+      const data = decodeSceneFromParam(param);
+      dispatch({
+        type: "LOAD_SCENE",
+        points: data.points,
+        connections: data.connections,
+      });
+    } catch {
+      // Ignore invalid/corrupted share links; keep the default scene.
+    }
+    window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
   function handleCanvasClick(hit: CanvasHit, worldPos: { x: number; y: number }) {
@@ -107,6 +127,21 @@ export default function MotionPlayground() {
     }
   }
 
+  async function handleShare(): Promise<boolean> {
+    const encoded = encodeSceneToParam({
+      points: scene.points,
+      connections: scene.connections,
+    });
+    const url = `${window.location.origin}${window.location.pathname}?s=${encoded}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      return true;
+    } catch {
+      prompt(t("data.share"), url);
+      return false;
+    }
+  }
+
   function handleCanvasContextMenu(
     hit: CanvasHit,
     clientX: number,
@@ -132,7 +167,7 @@ export default function MotionPlayground() {
       : undefined;
 
   return (
-    <div className="flex flex-col items-center gap-6 py-10 px-4">
+    <div className="landscape-shell flex w-full flex-col items-center gap-4 py-10 px-4">
       <div className="flex w-full max-w-3xl items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-zinc-50">
           {t("app.title")}
@@ -140,47 +175,60 @@ export default function MotionPlayground() {
         <LanguageSwitcher />
       </div>
 
-      <SimulationCanvas
-        points={scene.points}
-        connections={scene.connections}
-        isPlaying={isPlaying}
-        recordInterval={recordInterval}
-        trailLifetime={trailLifetime}
-        resetSignal={resetSignal}
-        clearTrailSignal={clearTrailSignal}
-        mode={scene.mode}
-        connectStartId={scene.connectStartId}
-        editingPointId={popover?.kind === "point" ? popover.pointId : null}
-        colors={colors}
-        onCanvasClick={handleCanvasClick}
-        onCanvasContextMenu={handleCanvasContextMenu}
-        onPointMove={handlePointMove}
-      />
+      <div className="landscape-body flex w-full max-w-3xl flex-col items-center gap-6">
+        <div className="canvas-col w-full">
+          <SimulationCanvas
+            points={scene.points}
+            connections={scene.connections}
+            isPlaying={isPlaying}
+            recordInterval={recordInterval}
+            trailLifetime={trailLifetime}
+            resetSignal={resetSignal}
+            clearTrailSignal={clearTrailSignal}
+            mode={scene.mode}
+            connectStartId={scene.connectStartId}
+            editingPointId={popover?.kind === "point" ? popover.pointId : null}
+            showGuides={showGuides}
+            colors={colors}
+            onCanvasClick={handleCanvasClick}
+            onCanvasContextMenu={handleCanvasContextMenu}
+            onPointMove={handlePointMove}
+          />
+        </div>
 
-      <div className="flex w-full max-w-3xl flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
-        <Toolbar
-          mode={scene.mode}
-          onModeChange={(mode) => dispatch({ type: "SET_MODE", mode })}
-        />
-        <div className="hidden h-8 w-px bg-white/10 sm:block" />
-        <ControlsPanel
-          isPlaying={isPlaying}
-          onTogglePlay={() => setIsPlaying((v) => !v)}
-          onReset={() => setResetSignal((v) => v + 1)}
-          onClearTrail={() => setClearTrailSignal((v) => v + 1)}
-          recordInterval={recordInterval}
-          onRecordIntervalChange={setRecordInterval}
-          trailLifetime={trailLifetime}
-          onTrailLifetimeChange={setTrailLifetime}
-        />
+        <div className="controls-col flex w-full flex-col items-center gap-4">
+          <div className="flex w-full flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
+            <Toolbar
+              mode={scene.mode}
+              onModeChange={(mode) => dispatch({ type: "SET_MODE", mode })}
+            />
+            <div className="hidden h-8 w-px bg-white/10 sm:block" />
+            <ControlsPanel
+              isPlaying={isPlaying}
+              onTogglePlay={() => setIsPlaying((v) => !v)}
+              onReset={() => setResetSignal((v) => v + 1)}
+              onClearTrail={() => setClearTrailSignal((v) => v + 1)}
+              recordInterval={recordInterval}
+              onRecordIntervalChange={setRecordInterval}
+              trailLifetime={trailLifetime}
+              onTrailLifetimeChange={setTrailLifetime}
+              showGuides={showGuides}
+              onShowGuidesChange={setShowGuides}
+            />
+          </div>
+
+          <SettingsAccordion title={t("settings.title")}>
+            <ColorSettingsPanel colors={colors} onChange={handleColorsChange} />
+            <DataControls
+              onExport={handleExport}
+              onImportFile={handleImportFile}
+              onShare={handleShare}
+            />
+          </SettingsAccordion>
+
+          <Footer />
+        </div>
       </div>
-
-      <SettingsAccordion title={t("settings.title")}>
-        <ColorSettingsPanel colors={colors} onChange={handleColorsChange} />
-        <DataControls onExport={handleExport} onImportFile={handleImportFile} />
-      </SettingsAccordion>
-
-      <Footer />
 
       {popover?.kind === "point" && editingPoint && (
         <PointEditPopover

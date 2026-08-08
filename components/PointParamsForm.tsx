@@ -6,9 +6,11 @@ interface CircleFormProps {
   type: "circle";
   radius: number;
   period: number;
+  initialPhase: number;
   clockwise: boolean;
   onRadiusChange: (value: number) => void;
   onPeriodChange: (value: number) => void;
+  onInitialPhaseChange: (value: number) => void;
   onClockwiseChange: (value: boolean) => void;
 }
 
@@ -16,9 +18,11 @@ interface LinearFormProps {
   type: "linear";
   amplitude: number;
   period: number;
+  initialPhase: number;
   angleDeg: number;
   onAmplitudeChange: (value: number) => void;
   onPeriodChange: (value: number) => void;
+  onInitialPhaseChange: (value: number) => void;
   onAngleChange: (value: number) => void;
 }
 
@@ -54,6 +58,14 @@ export default function PointParamsForm(props: PointParamsFormProps) {
             step={0.5}
             onChange={props.onPeriodChange}
           />
+          <NumberField
+            label={t("pointForm.phase")}
+            value={props.initialPhase}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={props.onInitialPhaseChange}
+          />
           <DirectionToggle
             clockwise={props.clockwise}
             onChange={props.onClockwiseChange}
@@ -84,6 +96,14 @@ export default function PointParamsForm(props: PointParamsFormProps) {
             max={360}
             step={5}
             onChange={props.onAngleChange}
+          />
+          <NumberField
+            label={t("pointForm.phase")}
+            value={props.initialPhase}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={props.onInitialPhaseChange}
           />
         </>
       )}

@@ -9,6 +9,10 @@ import type {
 } from "@/lib/motion/types";
 import { useLocale } from "@/lib/i18n/LocaleContext";
 
+function radiansToCycleFraction(radians: number): number {
+  return Math.round(((radians / (2 * Math.PI)) % 1) * 100) / 100;
+}
+
 export interface PointEditPopoverProps {
   point: PlacedPoint;
   x: number;
@@ -63,9 +67,13 @@ export default function PointEditPopover({
           type="circle"
           radius={point.params.radius}
           period={point.params.period}
+          initialPhase={radiansToCycleFraction(point.params.initialPhase)}
           clockwise={point.params.clockwise}
           onRadiusChange={(radius) => onChange({ radius })}
           onPeriodChange={(period) => onChange({ period })}
+          onInitialPhaseChange={(frac) =>
+            onChange({ initialPhase: frac * 2 * Math.PI })
+          }
           onClockwiseChange={(clockwise) => onChange({ clockwise })}
         />
       ) : (
@@ -73,9 +81,13 @@ export default function PointEditPopover({
           type="linear"
           amplitude={point.params.amplitude}
           period={point.params.period}
+          initialPhase={radiansToCycleFraction(point.params.initialPhase)}
           angleDeg={point.params.angleDeg}
           onAmplitudeChange={(amplitude) => onChange({ amplitude })}
           onPeriodChange={(period) => onChange({ period })}
+          onInitialPhaseChange={(frac) =>
+            onChange({ initialPhase: frac * 2 * Math.PI })
+          }
           onAngleChange={(angleDeg) => onChange({ angleDeg })}
         />
       )}

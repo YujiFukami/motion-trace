@@ -60,6 +60,7 @@ export interface SimulationCanvasProps {
   mode: Mode;
   connectStartId: string | null;
   editingPointId: string | null;
+  showGuides: boolean;
   colors: ColorSettings;
   onCanvasClick: (hit: CanvasHit, worldPos: Point2D) => void;
   onCanvasContextMenu: (
@@ -81,6 +82,7 @@ export default function SimulationCanvas({
   mode,
   connectStartId,
   editingPointId,
+  showGuides,
   colors,
   onCanvasClick,
   onCanvasContextMenu,
@@ -119,9 +121,11 @@ export default function SimulationCanvas({
 
   const connectionsRef = useRef(connections);
   const connectStartIdRef = useRef(connectStartId);
+  const showGuidesRef = useRef(showGuides);
   useEffect(() => {
     connectionsRef.current = connections;
     connectStartIdRef.current = connectStartId;
+    showGuidesRef.current = showGuides;
   });
 
   // Shared draw path used both by the RAF loop (recordTrail: true) and by a
@@ -178,11 +182,9 @@ export default function SimulationCanvas({
       drawCurrentLine(ctx, p1, p2, CURRENT_LINE_WIDTH, colors.line);
     }
 
-    const editingPoint = editingPointId
-      ? points.find((p) => p.id === editingPointId)
-      : undefined;
-    if (editingPoint) {
-      const guide = getRangeGuide(editingPoint);
+    for (const p of points) {
+      if (!showGuidesRef.current && p.id !== editingPointId) continue;
+      const guide = getRangeGuide(p);
       if (guide.type === "circle") {
         drawGuideCircle(ctx, guide.center, guide.radius, GUIDE_COLOR);
       } else {
@@ -209,7 +211,15 @@ export default function SimulationCanvas({
   useEffect(() => {
     if (!isPlaying) renderFrame(simTimeRef.current, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, connections, connectStartId, editingPointId, colors, isPlaying]);
+  }, [
+    points,
+    connections,
+    connectStartId,
+    editingPointId,
+    showGuides,
+    colors,
+    isPlaying,
+  ]);
 
   useEffect(() => {
     function onFullscreenChange() {
@@ -282,7 +292,7 @@ export default function SimulationCanvas({
       }
     >
       <div
-        className="relative aspect-[800/560] w-full"
+        className="motion-canvas-box relative aspect-[800/560] w-full"
         style={
           isFullscreen
             ? { width: "min(100%, calc(100vh * 800 / 560))" }

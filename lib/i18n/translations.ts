@@ -14,6 +14,7 @@ const ja = {
   "controls.recordInterval": "軌跡記録間隔",
   "controls.trailLifetime": "残像時間",
   "controls.seconds": "秒",
+  "controls.showGuides": "ガイド表示",
 
   "colors.background": "背景",
   "colors.point": "点",
@@ -22,6 +23,8 @@ const ja = {
 
   "data.export": "エクスポート",
   "data.import": "インポート",
+  "data.share": "共有",
+  "data.shareCopied": "コピーしました",
   "data.importError":
     "ファイルの読み込みに失敗しました。正しいエクスポートファイルか確認してください。",
 
@@ -32,6 +35,7 @@ const ja = {
   "pointForm.linearLabel": "直線往復運動",
   "pointForm.radius": "半径",
   "pointForm.period": "周期（秒）",
+  "pointForm.phase": "位相（周）",
   "pointForm.direction": "回転方向",
   "pointForm.ccw": "反時計回り",
   "pointForm.cw": "時計回り",
@@ -61,6 +65,7 @@ const en: Record<TranslationKey, string> = {
   "controls.recordInterval": "Trail Interval",
   "controls.trailLifetime": "Trail Duration",
   "controls.seconds": "sec",
+  "controls.showGuides": "Show Guides",
 
   "colors.background": "Background",
   "colors.point": "Point",
@@ -69,6 +74,8 @@ const en: Record<TranslationKey, string> = {
 
   "data.export": "Export",
   "data.import": "Import",
+  "data.share": "Share",
+  "data.shareCopied": "Copied!",
   "data.importError":
     "Failed to load the file. Please check it's a valid export file.",
 
@@ -79,6 +86,7 @@ const en: Record<TranslationKey, string> = {
   "pointForm.linearLabel": "Linear Motion",
   "pointForm.radius": "Radius",
   "pointForm.period": "Period (sec)",
+  "pointForm.phase": "Phase (cycles)",
   "pointForm.direction": "Direction",
   "pointForm.ccw": "Counter-clockwise",
   "pointForm.cw": "Clockwise",
@@ -108,6 +116,7 @@ const fr: Record<TranslationKey, string> = {
   "controls.recordInterval": "Intervalle de traînée",
   "controls.trailLifetime": "Durée de traînée",
   "controls.seconds": "s",
+  "controls.showGuides": "Afficher les guides",
 
   "colors.background": "Fond",
   "colors.point": "Point",
@@ -116,6 +125,8 @@ const fr: Record<TranslationKey, string> = {
 
   "data.export": "Exporter",
   "data.import": "Importer",
+  "data.share": "Partager",
+  "data.shareCopied": "Copié !",
   "data.importError":
     "Échec du chargement du fichier. Vérifiez qu'il s'agit d'un fichier d'export valide.",
 
@@ -126,6 +137,7 @@ const fr: Record<TranslationKey, string> = {
   "pointForm.linearLabel": "Mouvement linéaire",
   "pointForm.radius": "Rayon",
   "pointForm.period": "Période (s)",
+  "pointForm.phase": "Phase (cycles)",
   "pointForm.direction": "Sens de rotation",
   "pointForm.ccw": "Antihoraire",
   "pointForm.cw": "Horaire",
@@ -155,6 +167,7 @@ const es: Record<TranslationKey, string> = {
   "controls.recordInterval": "Intervalo de estela",
   "controls.trailLifetime": "Duración de estela",
   "controls.seconds": "s",
+  "controls.showGuides": "Mostrar guías",
 
   "colors.background": "Fondo",
   "colors.point": "Punto",
@@ -163,6 +176,8 @@ const es: Record<TranslationKey, string> = {
 
   "data.export": "Exportar",
   "data.import": "Importar",
+  "data.share": "Compartir",
+  "data.shareCopied": "¡Copiado!",
   "data.importError":
     "Error al cargar el archivo. Comprueba que sea un archivo de exportación válido.",
 
@@ -173,6 +188,7 @@ const es: Record<TranslationKey, string> = {
   "pointForm.linearLabel": "Movimiento lineal",
   "pointForm.radius": "Radio",
   "pointForm.period": "Periodo (s)",
+  "pointForm.phase": "Fase (ciclos)",
   "pointForm.direction": "Dirección de giro",
   "pointForm.ccw": "Antihorario",
   "pointForm.cw": "Horario",
@@ -202,6 +218,7 @@ const zh: Record<TranslationKey, string> = {
   "controls.recordInterval": "轨迹记录间隔",
   "controls.trailLifetime": "残影时间",
   "controls.seconds": "秒",
+  "controls.showGuides": "显示引导线",
 
   "colors.background": "背景",
   "colors.point": "点",
@@ -210,6 +227,8 @@ const zh: Record<TranslationKey, string> = {
 
   "data.export": "导出",
   "data.import": "导入",
+  "data.share": "分享",
+  "data.shareCopied": "已复制",
   "data.importError": "文件读取失败,请确认是否为正确的导出文件。",
 
   "settings.title": "显示与数据设置",
@@ -219,6 +238,7 @@ const zh: Record<TranslationKey, string> = {
   "pointForm.linearLabel": "直线往复运动",
   "pointForm.radius": "半径",
   "pointForm.period": "周期(秒)",
+  "pointForm.phase": "相位(周期)",
   "pointForm.direction": "旋转方向",
   "pointForm.ccw": "逆时针",
   "pointForm.cw": "顺时针",
