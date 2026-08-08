@@ -6,7 +6,15 @@ import ControlsPanel from "./ControlsPanel";
 import Toolbar from "./Toolbar";
 import PointEditPopover from "./PointEditPopover";
 import ConnectionContextMenu from "./ConnectionContextMenu";
+import ColorSettingsPanel from "./ColorSettings";
+import DataControls from "./DataControls";
 import { sceneReducer, initialSceneState } from "@/lib/scene/sceneReducer";
+import { DEFAULT_COLORS, type ColorSettings } from "@/lib/render/colors";
+import {
+  downloadTextFile,
+  parseSceneFile,
+  serializeScene,
+} from "@/lib/scene/sceneFile";
 
 type PopoverState =
   | { kind: "point"; pointId: string; x: number; y: number }
@@ -22,6 +30,7 @@ export default function MotionPlayground() {
   const [trailLifetime, setTrailLifetime] = useState(3);
   const [resetSignal, setResetSignal] = useState(0);
   const [clearTrailSignal, setClearTrailSignal] = useState(0);
+  const [colors, setColors] = useState<ColorSettings>(DEFAULT_COLORS);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -50,6 +59,47 @@ export default function MotionPlayground() {
 
   function handlePointMove(id: string, centerX: number, centerY: number) {
     dispatch({ type: "UPDATE_POINT_PARAMS", id, params: { centerX, centerY } });
+  }
+
+  function handleColorsChange(partial: Partial<ColorSettings>) {
+    setColors((prev) => ({ ...prev, ...partial }));
+  }
+
+  function handleExport() {
+    const json = serializeScene({
+      version: 1,
+      points: scene.points,
+      connections: scene.connections,
+      recordInterval,
+      trailLifetime,
+      colors,
+    });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    downloadTextFile(`motion-trace-${timestamp}.json`, json);
+  }
+
+  async function handleImportFile(file: File) {
+    try {
+      const text = await file.text();
+      const data = parseSceneFile(text);
+      dispatch({
+        type: "LOAD_SCENE",
+        points: data.points,
+        connections: data.connections,
+      });
+      if (typeof data.recordInterval === "number") {
+        setRecordInterval(data.recordInterval);
+      }
+      if (typeof data.trailLifetime === "number") {
+        setTrailLifetime(data.trailLifetime);
+      }
+      if (data.colors) {
+        setColors((prev) => ({ ...prev, ...data.colors }));
+      }
+      setPopover(null);
+    } catch {
+      alert("ファイルの読み込みに失敗しました。正しいエクスポートファイルか確認してください。");
+    }
   }
 
   function handleCanvasContextMenu(
@@ -93,6 +143,7 @@ export default function MotionPlayground() {
         mode={scene.mode}
         connectStartId={scene.connectStartId}
         editingPointId={popover?.kind === "point" ? popover.pointId : null}
+        colors={colors}
         onCanvasClick={handleCanvasClick}
         onCanvasContextMenu={handleCanvasContextMenu}
         onPointMove={handlePointMove}
@@ -113,6 +164,10 @@ export default function MotionPlayground() {
         trailLifetime={trailLifetime}
         onTrailLifetimeChange={setTrailLifetime}
       />
+
+      <ColorSettingsPanel colors={colors} onChange={handleColorsChange} />
+
+      <DataControls onExport={handleExport} onImportFile={handleImportFile} />
 
       {popover?.kind === "point" && editingPoint && (
         <PointEditPopover

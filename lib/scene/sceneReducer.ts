@@ -28,7 +28,8 @@ export type SceneAction =
   | { type: "DELETE_POINT"; id: string }
   | { type: "CONNECT_CLICK"; pointId: string }
   | { type: "CANCEL_PENDING_CONNECT" }
-  | { type: "DELETE_CONNECTION"; id: string };
+  | { type: "DELETE_CONNECTION"; id: string }
+  | { type: "LOAD_SCENE"; points: PlacedPoint[]; connections: Connection[] };
 
 export const initialSceneState: SceneState = {
   points: [
@@ -138,6 +139,14 @@ export function sceneReducer(
       return {
         ...state,
         connections: state.connections.filter((c) => c.id !== action.id),
+      };
+
+    case "LOAD_SCENE":
+      return {
+        points: action.points,
+        connections: action.connections,
+        mode: "select",
+        connectStartId: null,
       };
 
     default:

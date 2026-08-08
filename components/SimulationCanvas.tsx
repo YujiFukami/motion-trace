@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createMotionPoint } from "@/lib/motion/registry";
-import type {
-  MotionPoint,
-  PlacedPoint,
-  Point2D,
-} from "@/lib/motion/types";
+import type { MotionPoint, PlacedPoint, Point2D } from "@/lib/motion/types";
 import type { Connection } from "@/lib/connections/types";
 import type { Mode } from "@/lib/scene/sceneReducer";
 import { pruneExpired, type TrailSegment } from "@/lib/trail/trailBuffer";
@@ -19,14 +15,13 @@ import {
   drawTrailSegment,
 } from "@/lib/render/draw";
 import { getRangeGuide } from "@/lib/motion/rangeGuide";
+import type { ColorSettings } from "@/lib/render/colors";
 import { useAnimationLoop } from "@/lib/animation/useAnimationLoop";
 import { clientToWorld } from "@/lib/canvas/coords";
 import { hitTestPoint, hitTestSegment } from "@/lib/canvas/hitTest";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 560;
-const TRAIL_COLOR = "#7dd3fc";
-const CURRENT_LINE_COLOR = "#f8fafc";
 const HIGHLIGHT_COLOR = "#facc15";
 const GUIDE_COLOR = "#c084fc";
 const TRAIL_LINE_WIDTH = 1.5;
@@ -64,6 +59,7 @@ export interface SimulationCanvasProps {
   mode: Mode;
   connectStartId: string | null;
   editingPointId: string | null;
+  colors: ColorSettings;
   onCanvasClick: (hit: CanvasHit, worldPos: Point2D) => void;
   onCanvasContextMenu: (
     hit: CanvasHit,
@@ -84,11 +80,14 @@ export default function SimulationCanvas({
   mode,
   connectStartId,
   editingPointId,
+  colors,
   onCanvasClick,
   onCanvasContextMenu,
   onPointMove,
 }: SimulationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const draggingIdRef = useRef<string | null>(null);
   const dragStartWorldRef = useRef<Point2D>({ x: 0, y: 0 });
   const dragStartCenterRef = useRef<Point2D>({ x: 0, y: 0 });
@@ -148,7 +147,10 @@ export default function SimulationCanvas({
           !!x.p1 && !!x.p2,
       );
 
-    if (recordTrail && t - lastRecordedRef.current >= recordIntervalRef.current) {
+    if (
+      recordTrail &&
+      t - lastRecordedRef.current >= recordIntervalRef.current
+    ) {
       for (const { c, p1, p2 } of activeConnections) {
         trailRef.current.push({ connectionId: c.id, p1, p2, createdAt: t });
       }
@@ -167,11 +169,11 @@ export default function SimulationCanvas({
         t,
         trailLifetimeRef.current,
         TRAIL_LINE_WIDTH,
-        TRAIL_COLOR,
+        colors.trail,
       );
     }
     for (const { p1, p2 } of activeConnections) {
-      drawCurrentLine(ctx, p1, p2, CURRENT_LINE_WIDTH, CURRENT_LINE_COLOR);
+      drawCurrentLine(ctx, p1, p2, CURRENT_LINE_WIDTH, colors.line);
     }
 
     const editingPoint = editingPointId
@@ -189,7 +191,7 @@ export default function SimulationCanvas({
     for (const id of motionPointsRef.current.keys()) {
       const pos = livePositionsRef.current.get(id);
       if (!pos) continue;
-      drawPointMarker(ctx, pos, POINT_RADIUS, CURRENT_LINE_COLOR);
+      drawPointMarker(ctx, pos, POINT_RADIUS, colors.point);
       if (id === connectStartIdRef.current) {
         drawPointHighlight(ctx, pos, HIGHLIGHT_RADIUS, HIGHLIGHT_COLOR);
       }
@@ -205,7 +207,24 @@ export default function SimulationCanvas({
   useEffect(() => {
     if (!isPlaying) renderFrame(simTimeRef.current, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, connections, connectStartId, editingPointId, isPlaying]);
+  }, [points, connections, connectStartId, editingPointId, colors, isPlaying]);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current?.requestFullscreen();
+    }
+  }
 
   const isFirstResetRef = useRef(true);
   useEffect(() => {
@@ -252,71 +271,131 @@ export default function SimulationCanvas({
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
-      onClick={(e) => {
-        if (draggedRef.current) {
-          draggedRef.current = false;
-          return;
+    <div
+      ref={containerRef}
+      className={
+        isFullscreen
+          ? "flex h-full w-full items-center justify-center bg-black"
+          : "relative w-full max-w-3xl"
+      }
+    >
+      <div
+        className="relative aspect-[800/560] w-full"
+        style={
+          isFullscreen
+            ? { width: "min(100%, calc(100vh * 800 / 560))" }
+            : undefined
         }
-        const { hit, world } = resolveHit(e.clientX, e.clientY);
-        onCanvasClick(hit, world);
-      }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        const { hit } = resolveHit(e.clientX, e.clientY);
-        onCanvasContextMenu(hit, e.clientX, e.clientY);
-      }}
-      onPointerDown={(e) => {
-        if (mode !== "select") return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const { hit, world } = resolveHit(e.clientX, e.clientY);
-        if (hit.kind !== "point") return;
-        const point = points.find((p) => p.id === hit.id);
-        if (!point) return;
-        draggingIdRef.current = hit.id;
-        draggedRef.current = false;
-        dragStartWorldRef.current = world;
-        dragStartCenterRef.current = {
-          x: point.params.centerX,
-          y: point.params.centerY,
-        };
-        canvas.setPointerCapture(e.pointerId);
-        setIsDragging(true);
-      }}
-      onPointerMove={(e) => {
-        const id = draggingIdRef.current;
-        const canvas = canvasRef.current;
-        if (!id || !canvas) return;
-        const world = clientToWorld(canvas, e.clientX, e.clientY);
-        const dx = world.x - dragStartWorldRef.current.x;
-        const dy = world.y - dragStartWorldRef.current.y;
-        if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
-          draggedRef.current = true;
-        }
-        onPointMove(
-          id,
-          dragStartCenterRef.current.x + dx,
-          dragStartCenterRef.current.y + dy,
-        );
-      }}
-      onPointerUp={(e) => {
-        if (draggingIdRef.current) {
-          canvasRef.current?.releasePointerCapture(e.pointerId);
-        }
-        draggingIdRef.current = null;
-        setIsDragging(false);
-      }}
-      onPointerCancel={() => {
-        draggingIdRef.current = null;
-        setIsDragging(false);
-      }}
-      className={`w-full max-w-3xl rounded-lg border border-white/10 bg-black ${
-        isDragging ? "cursor-grabbing" : CURSOR_BY_MODE[mode]
-      }`}
-    />
+      >
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          onClick={(e) => {
+            if (draggedRef.current) {
+              draggedRef.current = false;
+              return;
+            }
+            const { hit, world } = resolveHit(e.clientX, e.clientY);
+            onCanvasClick(hit, world);
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            const { hit } = resolveHit(e.clientX, e.clientY);
+            onCanvasContextMenu(hit, e.clientX, e.clientY);
+          }}
+          onPointerDown={(e) => {
+            if (mode !== "select") return;
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const { hit, world } = resolveHit(e.clientX, e.clientY);
+            if (hit.kind !== "point") return;
+            const point = points.find((p) => p.id === hit.id);
+            if (!point) return;
+            draggingIdRef.current = hit.id;
+            draggedRef.current = false;
+            dragStartWorldRef.current = world;
+            dragStartCenterRef.current = {
+              x: point.params.centerX,
+              y: point.params.centerY,
+            };
+            canvas.setPointerCapture(e.pointerId);
+            setIsDragging(true);
+          }}
+          onPointerMove={(e) => {
+            const id = draggingIdRef.current;
+            const canvas = canvasRef.current;
+            if (!id || !canvas) return;
+            const world = clientToWorld(canvas, e.clientX, e.clientY);
+            const dx = world.x - dragStartWorldRef.current.x;
+            const dy = world.y - dragStartWorldRef.current.y;
+            if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+              draggedRef.current = true;
+            }
+            onPointMove(
+              id,
+              dragStartCenterRef.current.x + dx,
+              dragStartCenterRef.current.y + dy,
+            );
+          }}
+          onPointerUp={(e) => {
+            if (draggingIdRef.current) {
+              canvasRef.current?.releasePointerCapture(e.pointerId);
+            }
+            draggingIdRef.current = null;
+            setIsDragging(false);
+          }}
+          onPointerCancel={() => {
+            draggingIdRef.current = null;
+            setIsDragging(false);
+          }}
+          style={{ backgroundColor: colors.background }}
+          className={`h-full w-full rounded-lg border border-white/10 ${
+            isDragging ? "cursor-grabbing" : CURSOR_BY_MODE[mode]
+          }`}
+        />
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? "全画面終了" : "全画面表示"}
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-md bg-black/50 text-white hover:bg-black/70"
+        >
+          <MaximizeIcon isFullscreen={isFullscreen} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MaximizeIcon({ isFullscreen }: { isFullscreen: boolean }) {
+  if (isFullscreen) {
+    return (
+      <svg
+        viewBox="0 0 20 20"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M8 3 L8 8 L3 8 M12 3 L12 8 L17 8 M8 17 L8 12 L3 12 M12 17 L12 12 L17 12" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 8 L3 3 L8 3 M12 3 L17 3 L17 8 M17 12 L17 17 L12 17 M8 17 L3 17 L3 12" />
+    </svg>
   );
 }

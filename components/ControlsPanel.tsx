@@ -69,7 +69,7 @@ export default function ControlsPanel({
         <input
           type="number"
           min={0.5}
-          max={20}
+          max={60}
           step={0.5}
           value={trailLifetime}
           onChange={(e) => onTrailLifetimeChange(Number(e.target.value))}
