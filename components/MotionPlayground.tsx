@@ -31,8 +31,8 @@ export default function MotionPlayground() {
   const [popover, setPopover] = useState<PopoverState>(null);
 
   const [isPlaying, setIsPlaying] = useState(true);
-  const [recordInterval, setRecordInterval] = useState(0.1);
-  const [trailLifetime, setTrailLifetime] = useState(3);
+  const [recordInterval, setRecordInterval] = useState(0.05);
+  const [trailLifetime, setTrailLifetime] = useState(9);
   const [resetSignal, setResetSignal] = useState(0);
   const [clearTrailSignal, setClearTrailSignal] = useState(0);
   const [colors, setColors] = useState<ColorSettings>(DEFAULT_COLORS);
