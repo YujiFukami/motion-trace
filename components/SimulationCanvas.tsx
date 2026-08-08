@@ -122,10 +122,12 @@ export default function SimulationCanvas({
   const connectionsRef = useRef(connections);
   const connectStartIdRef = useRef(connectStartId);
   const showGuidesRef = useRef(showGuides);
+  const isPlayingRef = useRef(isPlaying);
   useEffect(() => {
     connectionsRef.current = connections;
     connectStartIdRef.current = connectStartId;
     showGuidesRef.current = showGuides;
+    isPlayingRef.current = isPlaying;
   });
 
   // Shared draw path used both by the RAF loop (recordTrail: true) and by a
@@ -247,6 +249,10 @@ export default function SimulationCanvas({
     simTimeRef.current = 0;
     lastRecordedRef.current = 0;
     trailRef.current = [];
+    // While paused, no RAF tick is coming to pick up this change — redraw
+    // immediately so the cleared trail is actually visible right away.
+    if (!isPlayingRef.current) renderFrame(simTimeRef.current, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetSignal, simTimeRef]);
 
   const isFirstClearRef = useRef(true);
@@ -256,6 +262,8 @@ export default function SimulationCanvas({
       return;
     }
     trailRef.current = [];
+    if (!isPlayingRef.current) renderFrame(simTimeRef.current, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearTrailSignal]);
 
   function resolveHit(
