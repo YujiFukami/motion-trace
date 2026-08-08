@@ -1,8 +1,9 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleContext";
+
 interface CircleFormProps {
   type: "circle";
-  label: string;
   radius: number;
   period: number;
   clockwise: boolean;
@@ -13,7 +14,6 @@ interface CircleFormProps {
 
 interface LinearFormProps {
   type: "linear";
-  label: string;
   amplitude: number;
   period: number;
   angleDeg: number;
@@ -25,16 +25,21 @@ interface LinearFormProps {
 export type PointParamsFormProps = CircleFormProps | LinearFormProps;
 
 export default function PointParamsForm(props: PointParamsFormProps) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
       <h3 className="text-sm font-semibold text-zinc-200">
-        {props.label}（{props.type === "circle" ? "円運動" : "直線往復運動"}）
+        {t("pointForm.editTitle")}（
+        {props.type === "circle"
+          ? t("pointForm.circleLabel")
+          : t("pointForm.linearLabel")}
+        ）
       </h3>
 
       {props.type === "circle" ? (
         <>
           <NumberField
-            label="半径"
+            label={t("pointForm.radius")}
             value={props.radius}
             min={10}
             max={250}
@@ -42,7 +47,7 @@ export default function PointParamsForm(props: PointParamsFormProps) {
             onChange={props.onRadiusChange}
           />
           <NumberField
-            label="周期（秒）"
+            label={t("pointForm.period")}
             value={props.period}
             min={0.5}
             max={20}
@@ -57,7 +62,7 @@ export default function PointParamsForm(props: PointParamsFormProps) {
       ) : (
         <>
           <NumberField
-            label="振幅"
+            label={t("pointForm.amplitude")}
             value={props.amplitude}
             min={10}
             max={250}
@@ -65,7 +70,7 @@ export default function PointParamsForm(props: PointParamsFormProps) {
             onChange={props.onAmplitudeChange}
           />
           <NumberField
-            label="周期（秒）"
+            label={t("pointForm.period")}
             value={props.period}
             min={0.5}
             max={20}
@@ -73,7 +78,7 @@ export default function PointParamsForm(props: PointParamsFormProps) {
             onChange={props.onPeriodChange}
           />
           <NumberField
-            label="方向角度（度）"
+            label={t("pointForm.angle")}
             value={props.angleDeg}
             min={0}
             max={360}
@@ -92,9 +97,10 @@ interface DirectionToggleProps {
 }
 
 function DirectionToggle({ clockwise, onChange }: DirectionToggleProps) {
+  const { t } = useLocale();
   return (
     <div className="flex items-center justify-between gap-3 text-sm text-zinc-300">
-      <span className="w-28 shrink-0">回転方向</span>
+      <span className="w-28 shrink-0">{t("pointForm.direction")}</span>
       <div className="flex flex-1 gap-2">
         <button
           type="button"
@@ -103,7 +109,7 @@ function DirectionToggle({ clockwise, onChange }: DirectionToggleProps) {
             !clockwise ? "bg-sky-500 text-white" : "bg-white/10 text-zinc-300 hover:bg-white/20"
           }`}
         >
-          反時計回り
+          {t("pointForm.ccw")}
         </button>
         <button
           type="button"
@@ -112,7 +118,7 @@ function DirectionToggle({ clockwise, onChange }: DirectionToggleProps) {
             clockwise ? "bg-sky-500 text-white" : "bg-white/10 text-zinc-300 hover:bg-white/20"
           }`}
         >
-          時計回り
+          {t("pointForm.cw")}
         </button>
       </div>
     </div>

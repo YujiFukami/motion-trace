@@ -2,12 +2,14 @@
 
 import type { ReactNode } from "react";
 import type { Mode } from "@/lib/scene/sceneReducer";
+import { useLocale } from "@/lib/i18n/LocaleContext";
+import type { TranslationKey } from "@/lib/i18n/translations";
 
-const MODE_LABELS: Record<Mode, string> = {
-  select: "選択/編集",
-  placeCircle: "円運動を配置",
-  placeLinear: "上下運動を配置",
-  connect: "接続",
+const MODE_LABEL_KEYS: Record<Mode, TranslationKey> = {
+  select: "toolbar.select",
+  placeCircle: "toolbar.placeCircle",
+  placeLinear: "toolbar.placeLinear",
+  connect: "toolbar.connect",
 };
 
 const MODES: Mode[] = ["select", "placeCircle", "placeLinear", "connect"];
@@ -18,12 +20,13 @@ export interface ToolbarProps {
 }
 
 export default function Toolbar({ mode, onModeChange }: ToolbarProps) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-wrap gap-2">
       {MODES.map((m) => (
         <IconButton
           key={m}
-          label={MODE_LABELS[m]}
+          label={t(MODE_LABEL_KEYS[m])}
           active={mode === m}
           onClick={() => onModeChange(m)}
         >

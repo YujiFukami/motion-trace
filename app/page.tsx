@@ -1,5 +1,10 @@
 import MotionPlayground from "@/components/MotionPlayground";
+import { LocaleProvider } from "@/lib/i18n/LocaleContext";
 
 export default function Home() {
-  return <MotionPlayground />;
+  return (
+    <LocaleProvider>
+      <MotionPlayground />
+    </LocaleProvider>
+  );
 }

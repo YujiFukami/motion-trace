@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/LocaleContext";
+
 const RECORD_INTERVAL_OPTIONS = [0.05, 0.1, 0.5];
 
 export interface ControlsPanelProps {
@@ -23,6 +25,7 @@ export default function ControlsPanel({
   trailLifetime,
   onTrailLifetimeChange,
 }: ControlsPanelProps) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="flex gap-2">
@@ -31,26 +34,26 @@ export default function ControlsPanel({
           onClick={onTogglePlay}
           className="rounded-md bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-400"
         >
-          {isPlaying ? "一時停止" : "再生"}
+          {isPlaying ? t("controls.pause") : t("controls.play")}
         </button>
         <button
           type="button"
           onClick={onReset}
           className="rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
         >
-          リセット
+          {t("controls.reset")}
         </button>
         <button
           type="button"
           onClick={onClearTrail}
           className="rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
         >
-          軌跡クリア
+          {t("controls.clearTrail")}
         </button>
       </div>
 
       <label className="flex items-center gap-2 text-sm text-zinc-300">
-        軌跡記録間隔
+        {t("controls.recordInterval")}
         <select
           value={recordInterval}
           onChange={(e) => onRecordIntervalChange(Number(e.target.value))}
@@ -58,14 +61,15 @@ export default function ControlsPanel({
         >
           {RECORD_INTERVAL_OPTIONS.map((v) => (
             <option key={v} value={v}>
-              {v}秒
+              {v}
+              {t("controls.seconds")}
             </option>
           ))}
         </select>
       </label>
 
       <label className="flex items-center gap-2 text-sm text-zinc-300">
-        残像時間
+        {t("controls.trailLifetime")}
         <input
           type="number"
           min={0.5}
@@ -75,7 +79,7 @@ export default function ControlsPanel({
           onChange={(e) => onTrailLifetimeChange(Number(e.target.value))}
           className="w-20 rounded-md border border-white/10 bg-black/40 px-2 py-1"
         />
-        秒
+        {t("controls.seconds")}
       </label>
     </div>
   );

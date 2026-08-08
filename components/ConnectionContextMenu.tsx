@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "@/lib/i18n/LocaleContext";
 
 export interface ConnectionContextMenuProps {
   x: number;
@@ -17,6 +18,7 @@ export default function ConnectionContextMenu({
 }: ConnectionContextMenuProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState({ left: x, top: y });
+  const { t } = useLocale();
 
   useEffect(() => {
     const el = ref.current;
@@ -49,7 +51,7 @@ export default function ConnectionContextMenu({
         onClick={onDelete}
         className="rounded-md px-3 py-1.5 text-left text-sm font-medium text-white hover:bg-white/10"
       >
-        この接続を削除
+        {t("connectionMenu.delete")}
       </button>
     </div>
   );

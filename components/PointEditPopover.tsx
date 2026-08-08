@@ -7,6 +7,7 @@ import type {
   LinearMotionParams,
   PlacedPoint,
 } from "@/lib/motion/types";
+import { useLocale } from "@/lib/i18n/LocaleContext";
 
 export interface PointEditPopoverProps {
   point: PlacedPoint;
@@ -29,6 +30,7 @@ export default function PointEditPopover({
 }: PointEditPopoverProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState({ left: x, top: y });
+  const { t } = useLocale();
 
   useEffect(() => {
     const el = ref.current;
@@ -59,7 +61,6 @@ export default function PointEditPopover({
       {point.type === "circle" ? (
         <PointParamsForm
           type="circle"
-          label="点を編集"
           radius={point.params.radius}
           period={point.params.period}
           clockwise={point.params.clockwise}
@@ -70,7 +71,6 @@ export default function PointEditPopover({
       ) : (
         <PointParamsForm
           type="linear"
-          label="点を編集"
           amplitude={point.params.amplitude}
           period={point.params.period}
           angleDeg={point.params.angleDeg}
@@ -84,7 +84,7 @@ export default function PointEditPopover({
         onClick={onDelete}
         className="rounded-md bg-red-500/80 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500"
       >
-        削除
+        {t("pointForm.delete")}
       </button>
     </div>
   );

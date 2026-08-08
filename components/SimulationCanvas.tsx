@@ -19,6 +19,7 @@ import type { ColorSettings } from "@/lib/render/colors";
 import { useAnimationLoop } from "@/lib/animation/useAnimationLoop";
 import { clientToWorld } from "@/lib/canvas/coords";
 import { hitTestPoint, hitTestSegment } from "@/lib/canvas/hitTest";
+import { useLocale } from "@/lib/i18n/LocaleContext";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 560;
@@ -85,6 +86,7 @@ export default function SimulationCanvas({
   onCanvasContextMenu,
   onPointMove,
 }: SimulationCanvasProps) {
+  const { t } = useLocale();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -363,7 +365,9 @@ export default function SimulationCanvas({
         <button
           type="button"
           onClick={toggleFullscreen}
-          aria-label={isFullscreen ? "全画面終了" : "全画面表示"}
+          aria-label={
+            isFullscreen ? t("fullscreen.exit") : t("fullscreen.enter")
+          }
           className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-md bg-black/50 text-white hover:bg-black/70"
         >
           <MaximizeIcon isFullscreen={isFullscreen} />

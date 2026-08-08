@@ -9,6 +9,8 @@ import ConnectionContextMenu from "./ConnectionContextMenu";
 import ColorSettingsPanel from "./ColorSettings";
 import DataControls from "./DataControls";
 import SettingsAccordion from "./SettingsAccordion";
+import LanguageSwitcher from "./LanguageSwitcher";
+import Footer from "./Footer";
 import { sceneReducer, initialSceneState } from "@/lib/scene/sceneReducer";
 import { DEFAULT_COLORS, type ColorSettings } from "@/lib/render/colors";
 import {
@@ -16,6 +18,7 @@ import {
   parseSceneFile,
   serializeScene,
 } from "@/lib/scene/sceneFile";
+import { useLocale } from "@/lib/i18n/LocaleContext";
 
 type PopoverState =
   | { kind: "point"; pointId: string; x: number; y: number }
@@ -23,6 +26,7 @@ type PopoverState =
   | null;
 
 export default function MotionPlayground() {
+  const { t } = useLocale();
   const [scene, dispatch] = useReducer(sceneReducer, initialSceneState);
   const [popover, setPopover] = useState<PopoverState>(null);
 
@@ -99,7 +103,7 @@ export default function MotionPlayground() {
       }
       setPopover(null);
     } catch {
-      alert("ファイルの読み込みに失敗しました。正しいエクスポートファイルか確認してください。");
+      alert(t("data.importError"));
     }
   }
 
@@ -129,9 +133,12 @@ export default function MotionPlayground() {
 
   return (
     <div className="flex flex-col items-center gap-6 py-10 px-4">
-      <h1 className="text-2xl font-semibold text-zinc-50">
-        軌道・残像ジェネレーター
-      </h1>
+      <div className="flex w-full max-w-3xl items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-zinc-50">
+          {t("app.title")}
+        </h1>
+        <LanguageSwitcher />
+      </div>
 
       <SimulationCanvas
         points={scene.points}
@@ -168,10 +175,12 @@ export default function MotionPlayground() {
         />
       </div>
 
-      <SettingsAccordion title="表示・データ設定">
+      <SettingsAccordion title={t("settings.title")}>
         <ColorSettingsPanel colors={colors} onChange={handleColorsChange} />
         <DataControls onExport={handleExport} onImportFile={handleImportFile} />
       </SettingsAccordion>
+
+      <Footer />
 
       {popover?.kind === "point" && editingPoint && (
         <PointEditPopover
