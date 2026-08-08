@@ -349,7 +349,13 @@ export default function SimulationCanvas({
             draggingIdRef.current = null;
             setIsDragging(false);
           }}
-          style={{ backgroundColor: colors.background }}
+          style={{
+            backgroundColor: colors.background,
+            touchAction: "none",
+            WebkitTouchCallout: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+          }}
           className={`h-full w-full rounded-lg border border-white/10 ${
             isDragging ? "cursor-grabbing" : CURSOR_BY_MODE[mode]
           }`}

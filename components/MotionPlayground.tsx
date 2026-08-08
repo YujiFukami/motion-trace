@@ -8,6 +8,7 @@ import PointEditPopover from "./PointEditPopover";
 import ConnectionContextMenu from "./ConnectionContextMenu";
 import ColorSettingsPanel from "./ColorSettings";
 import DataControls from "./DataControls";
+import SettingsAccordion from "./SettingsAccordion";
 import { sceneReducer, initialSceneState } from "@/lib/scene/sceneReducer";
 import { DEFAULT_COLORS, type ColorSettings } from "@/lib/render/colors";
 import {
@@ -149,25 +150,28 @@ export default function MotionPlayground() {
         onPointMove={handlePointMove}
       />
 
-      <Toolbar
-        mode={scene.mode}
-        onModeChange={(mode) => dispatch({ type: "SET_MODE", mode })}
-      />
+      <div className="flex w-full max-w-3xl flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
+        <Toolbar
+          mode={scene.mode}
+          onModeChange={(mode) => dispatch({ type: "SET_MODE", mode })}
+        />
+        <div className="hidden h-8 w-px bg-white/10 sm:block" />
+        <ControlsPanel
+          isPlaying={isPlaying}
+          onTogglePlay={() => setIsPlaying((v) => !v)}
+          onReset={() => setResetSignal((v) => v + 1)}
+          onClearTrail={() => setClearTrailSignal((v) => v + 1)}
+          recordInterval={recordInterval}
+          onRecordIntervalChange={setRecordInterval}
+          trailLifetime={trailLifetime}
+          onTrailLifetimeChange={setTrailLifetime}
+        />
+      </div>
 
-      <ControlsPanel
-        isPlaying={isPlaying}
-        onTogglePlay={() => setIsPlaying((v) => !v)}
-        onReset={() => setResetSignal((v) => v + 1)}
-        onClearTrail={() => setClearTrailSignal((v) => v + 1)}
-        recordInterval={recordInterval}
-        onRecordIntervalChange={setRecordInterval}
-        trailLifetime={trailLifetime}
-        onTrailLifetimeChange={setTrailLifetime}
-      />
-
-      <ColorSettingsPanel colors={colors} onChange={handleColorsChange} />
-
-      <DataControls onExport={handleExport} onImportFile={handleImportFile} />
+      <SettingsAccordion title="表示・データ設定">
+        <ColorSettingsPanel colors={colors} onChange={handleColorsChange} />
+        <DataControls onExport={handleExport} onImportFile={handleImportFile} />
+      </SettingsAccordion>
 
       {popover?.kind === "point" && editingPoint && (
         <PointEditPopover

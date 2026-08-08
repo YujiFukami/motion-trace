@@ -24,7 +24,7 @@ export default function ControlsPanel({
   onTrailLifetimeChange,
 }: ControlsPanelProps) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
+    <div className="flex flex-wrap items-center gap-4">
       <div className="flex gap-2">
         <button
           type="button"

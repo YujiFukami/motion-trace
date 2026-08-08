@@ -19,7 +19,7 @@ export interface ToolbarProps {
 
 export default function Toolbar({ mode, onModeChange }: ToolbarProps) {
   return (
-    <div className="flex flex-wrap gap-2 rounded-lg border border-white/10 bg-white/5 p-4">
+    <div className="flex flex-wrap gap-2">
       {MODES.map((m) => (
         <IconButton
           key={m}
