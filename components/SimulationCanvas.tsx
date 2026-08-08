@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createMotionPoint } from "@/lib/motion/registry";
 import type {
   MotionPoint,
@@ -33,11 +33,16 @@ const POINT_HIT_RADIUS = 14;
 const LINE_HIT_DIST = 8;
 
 const CURSOR_BY_MODE: Record<Mode, string> = {
-  select: "cursor-default",
+  select: "cursor-grab",
   placeCircle: "cursor-crosshair",
   placeLinear: "cursor-crosshair",
   connect: "cursor-pointer",
 };
+
+// Minimum pointer travel (world units) before a select-mode press is
+// treated as a drag rather than a click, so the click that ends a drag
+// doesn't also fire onCanvasClick.
+const DRAG_THRESHOLD = 3;
 
 export type CanvasHit =
   | { kind: "point"; id: string }
@@ -60,6 +65,7 @@ export interface SimulationCanvasProps {
     clientX: number,
     clientY: number,
   ) => void;
+  onPointMove: (id: string, centerX: number, centerY: number) => void;
 }
 
 export default function SimulationCanvas({
@@ -74,8 +80,14 @@ export default function SimulationCanvas({
   connectStartId,
   onCanvasClick,
   onCanvasContextMenu,
+  onPointMove,
 }: SimulationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const draggingIdRef = useRef<string | null>(null);
+  const dragStartWorldRef = useRef<Point2D>({ x: 0, y: 0 });
+  const dragStartCenterRef = useRef<Point2D>({ x: 0, y: 0 });
+  const draggedRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const trailRef = useRef<TrailSegment[]>([]);
   const lastRecordedRef = useRef(0);
   const livePositionsRef = useRef<Map<string, Point2D>>(new Map());
@@ -226,6 +238,10 @@ export default function SimulationCanvas({
       width={CANVAS_WIDTH}
       height={CANVAS_HEIGHT}
       onClick={(e) => {
+        if (draggedRef.current) {
+          draggedRef.current = false;
+          return;
+        }
         const { hit, world } = resolveHit(e.clientX, e.clientY);
         onCanvasClick(hit, world);
       }}
@@ -234,7 +250,54 @@ export default function SimulationCanvas({
         const { hit } = resolveHit(e.clientX, e.clientY);
         onCanvasContextMenu(hit, e.clientX, e.clientY);
       }}
-      className={`w-full max-w-3xl rounded-lg border border-white/10 bg-black ${CURSOR_BY_MODE[mode]}`}
+      onPointerDown={(e) => {
+        if (mode !== "select") return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const { hit, world } = resolveHit(e.clientX, e.clientY);
+        if (hit.kind !== "point") return;
+        const point = points.find((p) => p.id === hit.id);
+        if (!point) return;
+        draggingIdRef.current = hit.id;
+        draggedRef.current = false;
+        dragStartWorldRef.current = world;
+        dragStartCenterRef.current = {
+          x: point.params.centerX,
+          y: point.params.centerY,
+        };
+        canvas.setPointerCapture(e.pointerId);
+        setIsDragging(true);
+      }}
+      onPointerMove={(e) => {
+        const id = draggingIdRef.current;
+        const canvas = canvasRef.current;
+        if (!id || !canvas) return;
+        const world = clientToWorld(canvas, e.clientX, e.clientY);
+        const dx = world.x - dragStartWorldRef.current.x;
+        const dy = world.y - dragStartWorldRef.current.y;
+        if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+          draggedRef.current = true;
+        }
+        onPointMove(
+          id,
+          dragStartCenterRef.current.x + dx,
+          dragStartCenterRef.current.y + dy,
+        );
+      }}
+      onPointerUp={(e) => {
+        if (draggingIdRef.current) {
+          canvasRef.current?.releasePointerCapture(e.pointerId);
+        }
+        draggingIdRef.current = null;
+        setIsDragging(false);
+      }}
+      onPointerCancel={() => {
+        draggingIdRef.current = null;
+        setIsDragging(false);
+      }}
+      className={`w-full max-w-3xl rounded-lg border border-white/10 bg-black ${
+        isDragging ? "cursor-grabbing" : CURSOR_BY_MODE[mode]
+      }`}
     />
   );
 }

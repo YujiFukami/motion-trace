@@ -48,6 +48,10 @@ export default function MotionPlayground() {
     }
   }
 
+  function handlePointMove(id: string, centerX: number, centerY: number) {
+    dispatch({ type: "UPDATE_POINT_PARAMS", id, params: { centerX, centerY } });
+  }
+
   function handleCanvasContextMenu(
     hit: CanvasHit,
     clientX: number,
@@ -90,6 +94,7 @@ export default function MotionPlayground() {
         connectStartId={scene.connectStartId}
         onCanvasClick={handleCanvasClick}
         onCanvasContextMenu={handleCanvasContextMenu}
+        onPointMove={handlePointMove}
       />
 
       <Toolbar
