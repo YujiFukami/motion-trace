@@ -1,6 +1,7 @@
 import type { Point2D } from "../motion/types";
 
 export interface TrailSegment {
+  connectionId: string;
   p1: Point2D;
   p2: Point2D;
   createdAt: number; // simulation time when recorded (seconds)

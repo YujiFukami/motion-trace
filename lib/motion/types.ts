@@ -30,3 +30,10 @@ export interface MotionPoint<
   params: P;
   getPosition(t: number): Point2D;
 }
+
+// Lightweight, serializable state for a user-placed point (id/type/params
+// only). The MotionPoint (with its getPosition closure) is always derived
+// from this via lib/motion/registry.ts, never stored directly in React state.
+export type PlacedPoint =
+  | { id: string; type: "circle"; params: CircleMotionParams }
+  | { id: string; type: "linear"; params: LinearMotionParams };

@@ -50,3 +50,17 @@ export function drawPointMarker(
   ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
   ctx.fill();
 }
+
+export function drawPointHighlight(
+  ctx: CanvasRenderingContext2D,
+  p: Point2D,
+  radius: number,
+  color: string,
+): void {
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+}
