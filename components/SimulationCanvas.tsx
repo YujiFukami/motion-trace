@@ -12,10 +12,13 @@ import type { Mode } from "@/lib/scene/sceneReducer";
 import { pruneExpired, type TrailSegment } from "@/lib/trail/trailBuffer";
 import {
   drawCurrentLine,
+  drawGuideCircle,
+  drawGuideLine,
   drawPointHighlight,
   drawPointMarker,
   drawTrailSegment,
 } from "@/lib/render/draw";
+import { getRangeGuide } from "@/lib/motion/rangeGuide";
 import { useAnimationLoop } from "@/lib/animation/useAnimationLoop";
 import { clientToWorld } from "@/lib/canvas/coords";
 import { hitTestPoint, hitTestSegment } from "@/lib/canvas/hitTest";
@@ -25,6 +28,7 @@ const CANVAS_HEIGHT = 560;
 const TRAIL_COLOR = "#7dd3fc";
 const CURRENT_LINE_COLOR = "#f8fafc";
 const HIGHLIGHT_COLOR = "#facc15";
+const GUIDE_COLOR = "#c084fc";
 const TRAIL_LINE_WIDTH = 1.5;
 const CURRENT_LINE_WIDTH = 2.5;
 const POINT_RADIUS = 4;
@@ -59,6 +63,7 @@ export interface SimulationCanvasProps {
   clearTrailSignal: number;
   mode: Mode;
   connectStartId: string | null;
+  editingPointId: string | null;
   onCanvasClick: (hit: CanvasHit, worldPos: Point2D) => void;
   onCanvasContextMenu: (
     hit: CanvasHit,
@@ -78,6 +83,7 @@ export default function SimulationCanvas({
   clearTrailSignal,
   mode,
   connectStartId,
+  editingPointId,
   onCanvasClick,
   onCanvasContextMenu,
   onPointMove,
@@ -167,6 +173,19 @@ export default function SimulationCanvas({
     for (const { p1, p2 } of activeConnections) {
       drawCurrentLine(ctx, p1, p2, CURRENT_LINE_WIDTH, CURRENT_LINE_COLOR);
     }
+
+    const editingPoint = editingPointId
+      ? points.find((p) => p.id === editingPointId)
+      : undefined;
+    if (editingPoint) {
+      const guide = getRangeGuide(editingPoint);
+      if (guide.type === "circle") {
+        drawGuideCircle(ctx, guide.center, guide.radius, GUIDE_COLOR);
+      } else {
+        drawGuideLine(ctx, guide.p1, guide.p2, GUIDE_COLOR);
+      }
+    }
+
     for (const id of motionPointsRef.current.keys()) {
       const pos = livePositionsRef.current.get(id);
       if (!pos) continue;
@@ -186,7 +205,7 @@ export default function SimulationCanvas({
   useEffect(() => {
     if (!isPlaying) renderFrame(simTimeRef.current, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, connections, connectStartId, isPlaying]);
+  }, [points, connections, connectStartId, editingPointId, isPlaying]);
 
   const isFirstResetRef = useRef(true);
   useEffect(() => {

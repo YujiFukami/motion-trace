@@ -62,8 +62,10 @@ export default function PointEditPopover({
           label="点を編集"
           radius={point.params.radius}
           period={point.params.period}
+          clockwise={point.params.clockwise}
           onRadiusChange={(radius) => onChange({ radius })}
           onPeriodChange={(period) => onChange({ period })}
+          onClockwiseChange={(clockwise) => onChange({ clockwise })}
         />
       ) : (
         <PointParamsForm

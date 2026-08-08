@@ -92,6 +92,7 @@ export default function MotionPlayground() {
         clearTrailSignal={clearTrailSignal}
         mode={scene.mode}
         connectStartId={scene.connectStartId}
+        editingPointId={popover?.kind === "point" ? popover.pointId : null}
         onCanvasClick={handleCanvasClick}
         onCanvasContextMenu={handleCanvasContextMenu}
         onPointMove={handlePointMove}

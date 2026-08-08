@@ -5,8 +5,10 @@ interface CircleFormProps {
   label: string;
   radius: number;
   period: number;
+  clockwise: boolean;
   onRadiusChange: (value: number) => void;
   onPeriodChange: (value: number) => void;
+  onClockwiseChange: (value: boolean) => void;
 }
 
 interface LinearFormProps {
@@ -47,6 +49,10 @@ export default function PointParamsForm(props: PointParamsFormProps) {
             step={0.5}
             onChange={props.onPeriodChange}
           />
+          <DirectionToggle
+            clockwise={props.clockwise}
+            onChange={props.onClockwiseChange}
+          />
         </>
       ) : (
         <>
@@ -76,6 +82,39 @@ export default function PointParamsForm(props: PointParamsFormProps) {
           />
         </>
       )}
+    </div>
+  );
+}
+
+interface DirectionToggleProps {
+  clockwise: boolean;
+  onChange: (value: boolean) => void;
+}
+
+function DirectionToggle({ clockwise, onChange }: DirectionToggleProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-sm text-zinc-300">
+      <span className="w-28 shrink-0">回転方向</span>
+      <div className="flex flex-1 gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(false)}
+          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium ${
+            !clockwise ? "bg-sky-500 text-white" : "bg-white/10 text-zinc-300 hover:bg-white/20"
+          }`}
+        >
+          反時計回り
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(true)}
+          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium ${
+            clockwise ? "bg-sky-500 text-white" : "bg-white/10 text-zinc-300 hover:bg-white/20"
+          }`}
+        >
+          時計回り
+        </button>
+      </div>
     </div>
   );
 }
