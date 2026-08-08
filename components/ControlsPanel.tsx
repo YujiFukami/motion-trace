@@ -15,6 +15,7 @@ export interface ControlsPanelProps {
   onTrailLifetimeChange: (value: number) => void;
   showGuides: boolean;
   onShowGuidesChange: (value: boolean) => void;
+  onRandomize: () => void;
 }
 
 export default function ControlsPanel({
@@ -28,6 +29,7 @@ export default function ControlsPanel({
   onTrailLifetimeChange,
   showGuides,
   onShowGuidesChange,
+  onRandomize,
 }: ControlsPanelProps) {
   const { t } = useLocale();
   return (
@@ -53,6 +55,13 @@ export default function ControlsPanel({
           className="rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
         >
           {t("controls.clearTrail")}
+        </button>
+        <button
+          type="button"
+          onClick={onRandomize}
+          className="rounded-md bg-violet-500/80 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+        >
+          {t("controls.randomize")}
         </button>
       </div>
 

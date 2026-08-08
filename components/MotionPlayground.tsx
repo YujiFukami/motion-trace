@@ -19,6 +19,7 @@ import {
   serializeScene,
 } from "@/lib/scene/sceneFile";
 import { decodeSceneFromParam, encodeSceneToParam } from "@/lib/scene/shareLink";
+import { generateRandomScene } from "@/lib/scene/randomScene";
 import { useLocale } from "@/lib/i18n/LocaleContext";
 
 type PopoverState =
@@ -84,6 +85,14 @@ export default function MotionPlayground() {
 
   function handlePointMove(id: string, centerX: number, centerY: number) {
     dispatch({ type: "UPDATE_POINT_PARAMS", id, params: { centerX, centerY } });
+  }
+
+  function handleRandomize() {
+    const { points, connections } = generateRandomScene();
+    dispatch({ type: "LOAD_SCENE", points, connections });
+    setPopover(null);
+    setResetSignal((v) => v + 1);
+    setClearTrailSignal((v) => v + 1);
   }
 
   function handleColorsChange(partial: Partial<ColorSettings>) {
@@ -233,6 +242,7 @@ export default function MotionPlayground() {
               onTrailLifetimeChange={setTrailLifetime}
               showGuides={showGuides}
               onShowGuidesChange={setShowGuides}
+              onRandomize={handleRandomize}
             />
           </div>
 

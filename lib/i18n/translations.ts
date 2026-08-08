@@ -15,6 +15,7 @@ const ja = {
   "controls.trailLifetime": "残像時間",
   "controls.seconds": "秒",
   "controls.showGuides": "ガイド表示",
+  "controls.randomize": "ランダム配置",
 
   "colors.background": "背景",
   "colors.point": "点",
@@ -66,6 +67,7 @@ const en: Record<TranslationKey, string> = {
   "controls.trailLifetime": "Trail Duration",
   "controls.seconds": "sec",
   "controls.showGuides": "Show Guides",
+  "controls.randomize": "Randomize",
 
   "colors.background": "Background",
   "colors.point": "Point",
@@ -117,6 +119,7 @@ const fr: Record<TranslationKey, string> = {
   "controls.trailLifetime": "Durée de traînée",
   "controls.seconds": "s",
   "controls.showGuides": "Afficher les guides",
+  "controls.randomize": "Aléatoire",
 
   "colors.background": "Fond",
   "colors.point": "Point",
@@ -168,6 +171,7 @@ const es: Record<TranslationKey, string> = {
   "controls.trailLifetime": "Duración de estela",
   "controls.seconds": "s",
   "controls.showGuides": "Mostrar guías",
+  "controls.randomize": "Aleatorio",
 
   "colors.background": "Fondo",
   "colors.point": "Punto",
@@ -219,6 +223,7 @@ const zh: Record<TranslationKey, string> = {
   "controls.trailLifetime": "残影时间",
   "controls.seconds": "秒",
   "controls.showGuides": "显示引导线",
+  "controls.randomize": "随机生成",
 
   "colors.background": "背景",
   "colors.point": "点",
