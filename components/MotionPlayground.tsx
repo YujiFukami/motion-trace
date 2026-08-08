@@ -133,6 +133,25 @@ export default function MotionPlayground() {
       connections: scene.connections,
     });
     const url = `${window.location.origin}${window.location.pathname}?s=${encoded}`;
+
+    // Prefer the OS/browser native share sheet (X, LINE, Mail, etc. — whatever
+    // the device has installed) over just copying a link.
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: t("app.title"), url });
+        return false; // native UI already gave feedback; no toast needed
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return false;
+        // fall through to the fallbacks below on any other failure
+      }
+    }
+
+    // Browsers without the Web Share API (mainly desktop): open an X post
+    // composer directly rather than silently copying.
+    const tweetUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(t("app.title"))}`;
+    const opened = window.open(tweetUrl, "_blank", "noopener,noreferrer");
+    if (opened) return false;
+
     try {
       await navigator.clipboard.writeText(url);
       return true;
