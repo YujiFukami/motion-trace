@@ -21,8 +21,8 @@ import { clientToWorld } from "@/lib/canvas/coords";
 import { hitTestPoint, hitTestSegment } from "@/lib/canvas/hitTest";
 import { useLocale } from "@/lib/i18n/LocaleContext";
 
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 560;
+const LANDSCAPE_WIDTH = 800;
+const LANDSCAPE_HEIGHT = 560;
 const HIGHLIGHT_COLOR = "#facc15";
 const GUIDE_COLOR = "#c084fc";
 const TRAIL_LINE_WIDTH = 1.5;
@@ -69,6 +69,9 @@ export interface SimulationCanvasProps {
     clientY: number,
   ) => void;
   onPointMove: (id: string, centerX: number, centerY: number) => void;
+  onTogglePlay: () => void;
+  onReset: () => void;
+  onClearTrail: () => void;
 }
 
 export default function SimulationCanvas({
@@ -87,11 +90,15 @@ export default function SimulationCanvas({
   onCanvasClick,
   onCanvasContextMenu,
   onPointMove,
+  onTogglePlay,
+  onReset,
+  onClearTrail,
 }: SimulationCanvasProps) {
   const { t } = useLocale();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const draggingIdRef = useRef<string | null>(null);
   const dragStartWorldRef = useRef<Point2D>({ x: 0, y: 0 });
   const dragStartCenterRef = useRef<Point2D>({ x: 0, y: 0 });
@@ -232,6 +239,22 @@ export default function SimulationCanvas({
       document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
+  // Swap the canvas to a portrait (tall) shape on portrait viewports instead
+  // of always rendering the landscape-shaped world, so a phone held upright
+  // isn't stuck with a short, wide canvas leaving most of the screen empty.
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: portrait)");
+    // matchMedia only exists client-side; this mirrors the hydration-safe
+    // localStorage-read pattern used for locale (read after mount, once).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsPortrait(mq.matches);
+    function onChange(e: MediaQueryListEvent) {
+      setIsPortrait(e.matches);
+    }
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   function toggleFullscreen() {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -290,6 +313,9 @@ export default function SimulationCanvas({
     return { hit: { kind: "empty" }, world };
   }
 
+  const canvasWidth = isPortrait ? LANDSCAPE_HEIGHT : LANDSCAPE_WIDTH;
+  const canvasHeight = isPortrait ? LANDSCAPE_WIDTH : LANDSCAPE_HEIGHT;
+
   return (
     <div
       ref={containerRef}
@@ -300,17 +326,23 @@ export default function SimulationCanvas({
       }
     >
       <div
-        className="motion-canvas-box relative aspect-[800/560] w-full"
+        className={`motion-canvas-box relative w-full ${
+          isPortrait ? "aspect-[560/800]" : "aspect-[800/560]"
+        }`}
         style={
           isFullscreen
-            ? { width: "min(100%, calc(100vh * 800 / 560))" }
+            ? {
+                width: isPortrait
+                  ? "min(100%, calc(100vh * 560 / 800))"
+                  : "min(100%, calc(100vh * 800 / 560))",
+              }
             : undefined
         }
       >
         <canvas
           ref={canvasRef}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
+          width={canvasWidth}
+          height={canvasHeight}
           onClick={(e) => {
             if (draggedRef.current) {
               draggedRef.current = false;
@@ -390,6 +422,31 @@ export default function SimulationCanvas({
         >
           <MaximizeIcon isFullscreen={isFullscreen} />
         </button>
+        {isFullscreen && (
+          <div className="absolute bottom-2 left-2 flex gap-2">
+            <button
+              type="button"
+              onClick={onTogglePlay}
+              className="rounded-md bg-black/50 px-3 py-1.5 text-sm font-medium text-white hover:bg-black/70"
+            >
+              {isPlaying ? t("controls.pause") : t("controls.play")}
+            </button>
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-md bg-black/50 px-3 py-1.5 text-sm font-medium text-white hover:bg-black/70"
+            >
+              {t("controls.reset")}
+            </button>
+            <button
+              type="button"
+              onClick={onClearTrail}
+              className="rounded-md bg-black/50 px-3 py-1.5 text-sm font-medium text-white hover:bg-black/70"
+            >
+              {t("controls.clearTrail")}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

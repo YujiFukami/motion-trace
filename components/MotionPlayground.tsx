@@ -87,6 +87,18 @@ export default function MotionPlayground() {
     dispatch({ type: "UPDATE_POINT_PARAMS", id, params: { centerX, centerY } });
   }
 
+  function handleTogglePlay() {
+    setIsPlaying((v) => !v);
+  }
+
+  function handleReset() {
+    setResetSignal((v) => v + 1);
+  }
+
+  function handleClearTrail() {
+    setClearTrailSignal((v) => v + 1);
+  }
+
   function handleRandomize() {
     const { points, connections } = generateRandomScene();
     dispatch({ type: "LOAD_SCENE", points, connections });
@@ -221,6 +233,9 @@ export default function MotionPlayground() {
             onCanvasClick={handleCanvasClick}
             onCanvasContextMenu={handleCanvasContextMenu}
             onPointMove={handlePointMove}
+            onTogglePlay={handleTogglePlay}
+            onReset={handleReset}
+            onClearTrail={handleClearTrail}
           />
         </div>
 
@@ -233,9 +248,9 @@ export default function MotionPlayground() {
             <div className="hidden h-8 w-px bg-white/10 sm:block" />
             <ControlsPanel
               isPlaying={isPlaying}
-              onTogglePlay={() => setIsPlaying((v) => !v)}
-              onReset={() => setResetSignal((v) => v + 1)}
-              onClearTrail={() => setClearTrailSignal((v) => v + 1)}
+              onTogglePlay={handleTogglePlay}
+              onReset={handleReset}
+              onClearTrail={handleClearTrail}
               recordInterval={recordInterval}
               onRecordIntervalChange={setRecordInterval}
               trailLifetime={trailLifetime}
