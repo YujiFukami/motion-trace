@@ -2,11 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createMotionPoint } from "@/lib/motion/registry";
-import type { MotionPoint, PlacedPoint, Point2D } from "@/lib/motion/types";
+import type {
+  CircleMotionParams,
+  LinearMotionParams,
+  MotionPoint,
+  PlacedPoint,
+  Point2D,
+} from "@/lib/motion/types";
 import type { Connection } from "@/lib/connections/types";
 import type { Mode } from "@/lib/scene/sceneReducer";
 import { pruneExpired, type TrailSegment } from "@/lib/trail/trailBuffer";
 import {
+  drawCenterMark,
   drawCurrentLine,
   drawGuideCircle,
   drawGuideLine,
@@ -18,7 +25,11 @@ import { getRangeGuide } from "@/lib/motion/rangeGuide";
 import type { ColorSettings } from "@/lib/render/colors";
 import { useAnimationLoop } from "@/lib/animation/useAnimationLoop";
 import { clientToWorld } from "@/lib/canvas/coords";
-import { hitTestPoint, hitTestSegment } from "@/lib/canvas/hitTest";
+import {
+  hitTestCircleEdge,
+  hitTestPoint,
+  hitTestSegment,
+} from "@/lib/canvas/hitTest";
 import { useLocale } from "@/lib/i18n/LocaleContext";
 
 const LANDSCAPE_WIDTH = 800;
@@ -31,6 +42,11 @@ const POINT_RADIUS = 4;
 const HIGHLIGHT_RADIUS = 9;
 const POINT_HIT_RADIUS = 14;
 const LINE_HIT_DIST = 8;
+const CENTER_MARK_SIZE = 8;
+const ENDPOINT_MARK_RADIUS = 8;
+const ENDPOINT_HIT_RADIUS = 14;
+
+type DragKind = "point" | "center" | "radius" | "endpoint1" | "endpoint2";
 
 const CURSOR_BY_MODE: Record<Mode, string> = {
   select: "cursor-grab",
@@ -68,7 +84,10 @@ export interface SimulationCanvasProps {
     clientX: number,
     clientY: number,
   ) => void;
-  onPointMove: (id: string, centerX: number, centerY: number) => void;
+  onPointParamsChange: (
+    id: string,
+    params: Partial<CircleMotionParams> | Partial<LinearMotionParams>,
+  ) => void;
   onTogglePlay: () => void;
   onReset: () => void;
   onClearTrail: () => void;
@@ -89,7 +108,7 @@ export default function SimulationCanvas({
   colors,
   onCanvasClick,
   onCanvasContextMenu,
-  onPointMove,
+  onPointParamsChange,
   onTogglePlay,
   onReset,
   onClearTrail,
@@ -100,6 +119,7 @@ export default function SimulationCanvas({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
   const draggingIdRef = useRef<string | null>(null);
+  const dragKindRef = useRef<DragKind | null>(null);
   const dragStartWorldRef = useRef<Point2D>({ x: 0, y: 0 });
   const dragStartCenterRef = useRef<Point2D>({ x: 0, y: 0 });
   const draggedRef = useRef(false);
@@ -130,11 +150,13 @@ export default function SimulationCanvas({
   const connectStartIdRef = useRef(connectStartId);
   const showGuidesRef = useRef(showGuides);
   const isPlayingRef = useRef(isPlaying);
+  const modeRef = useRef(mode);
   useEffect(() => {
     connectionsRef.current = connections;
     connectStartIdRef.current = connectStartId;
     showGuidesRef.current = showGuides;
     isPlayingRef.current = isPlaying;
+    modeRef.current = mode;
   });
 
   // Shared draw path used both by the RAF loop (recordTrail: true) and by a
@@ -191,13 +213,32 @@ export default function SimulationCanvas({
       drawCurrentLine(ctx, p1, p2, CURRENT_LINE_WIDTH, colors.line);
     }
 
+    const showAllGuidesForEditing = modeRef.current === "select";
     for (const p of points) {
-      if (!showGuidesRef.current && p.id !== editingPointId) continue;
+      if (
+        !showGuidesRef.current &&
+        p.id !== editingPointId &&
+        !showAllGuidesForEditing
+      ) {
+        continue;
+      }
       const guide = getRangeGuide(p);
       if (guide.type === "circle") {
         drawGuideCircle(ctx, guide.center, guide.radius, GUIDE_COLOR);
       } else {
         drawGuideLine(ctx, guide.p1, guide.p2, GUIDE_COLOR);
+      }
+      if (showAllGuidesForEditing) {
+        drawCenterMark(
+          ctx,
+          { x: p.params.centerX, y: p.params.centerY },
+          CENTER_MARK_SIZE,
+          GUIDE_COLOR,
+        );
+        if (guide.type === "linear") {
+          drawPointHighlight(ctx, guide.p1, ENDPOINT_MARK_RADIUS, GUIDE_COLOR);
+          drawPointHighlight(ctx, guide.p2, ENDPOINT_MARK_RADIUS, GUIDE_COLOR);
+        }
       }
     }
 
@@ -228,6 +269,7 @@ export default function SimulationCanvas({
     showGuides,
     colors,
     isPlaying,
+    mode,
   ]);
 
   useEffect(() => {
@@ -313,6 +355,51 @@ export default function SimulationCanvas({
     return { hit: { kind: "empty" }, world };
   }
 
+  // Priority order for select-mode drags: the static center mark (easiest
+  // to grab reliably since it never moves) → linear endpoint handles →
+  // the circle guide's edge → finally the live, moving dot itself (the
+  // original drag-to-move target, kept working alongside the new handles).
+  function resolveDragStart(
+    clientX: number,
+    clientY: number,
+  ): { kind: DragKind; id: string; world: Point2D } | null {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const world = clientToWorld(canvas, clientX, clientY);
+
+    for (const p of points) {
+      const center = { x: p.params.centerX, y: p.params.centerY };
+      if (hitTestPoint(world, center, POINT_HIT_RADIUS)) {
+        return { kind: "center", id: p.id, world };
+      }
+    }
+    for (const p of points) {
+      if (p.type !== "linear") continue;
+      const guide = getRangeGuide(p);
+      if (guide.type !== "linear") continue;
+      if (hitTestPoint(world, guide.p1, ENDPOINT_HIT_RADIUS)) {
+        return { kind: "endpoint1", id: p.id, world };
+      }
+      if (hitTestPoint(world, guide.p2, ENDPOINT_HIT_RADIUS)) {
+        return { kind: "endpoint2", id: p.id, world };
+      }
+    }
+    for (const p of points) {
+      if (p.type !== "circle") continue;
+      const center = { x: p.params.centerX, y: p.params.centerY };
+      if (hitTestCircleEdge(world, center, p.params.radius, LINE_HIT_DIST)) {
+        return { kind: "radius", id: p.id, world };
+      }
+    }
+    for (const p of points) {
+      const pos = livePositionsRef.current.get(p.id);
+      if (pos && hitTestPoint(world, pos, POINT_HIT_RADIUS)) {
+        return { kind: "point", id: p.id, world };
+      }
+    }
+    return null;
+  }
+
   const canvasWidth = isPortrait ? LANDSCAPE_HEIGHT : LANDSCAPE_WIDTH;
   const canvasHeight = isPortrait ? LANDSCAPE_WIDTH : LANDSCAPE_HEIGHT;
 
@@ -360,45 +447,86 @@ export default function SimulationCanvas({
             if (mode !== "select") return;
             const canvas = canvasRef.current;
             if (!canvas) return;
-            const { hit, world } = resolveHit(e.clientX, e.clientY);
-            if (hit.kind !== "point") return;
-            const point = points.find((p) => p.id === hit.id);
-            if (!point) return;
-            draggingIdRef.current = hit.id;
+            const target = resolveDragStart(e.clientX, e.clientY);
+            if (!target) return;
+            draggingIdRef.current = target.id;
+            dragKindRef.current = target.kind;
             draggedRef.current = false;
-            dragStartWorldRef.current = world;
-            dragStartCenterRef.current = {
-              x: point.params.centerX,
-              y: point.params.centerY,
-            };
+            dragStartWorldRef.current = target.world;
+            if (target.kind === "point" || target.kind === "center") {
+              const point = points.find((p) => p.id === target.id);
+              if (point) {
+                dragStartCenterRef.current = {
+                  x: point.params.centerX,
+                  y: point.params.centerY,
+                };
+              }
+            }
             canvas.setPointerCapture(e.pointerId);
             setIsDragging(true);
           }}
           onPointerMove={(e) => {
             const id = draggingIdRef.current;
+            const kind = dragKindRef.current;
             const canvas = canvasRef.current;
-            if (!id || !canvas) return;
+            if (!id || !kind || !canvas) return;
             const world = clientToWorld(canvas, e.clientX, e.clientY);
             const dx = world.x - dragStartWorldRef.current.x;
             const dy = world.y - dragStartWorldRef.current.y;
             if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
               draggedRef.current = true;
             }
-            onPointMove(
-              id,
-              dragStartCenterRef.current.x + dx,
-              dragStartCenterRef.current.y + dy,
-            );
+
+            if (kind === "point" || kind === "center") {
+              onPointParamsChange(id, {
+                centerX: dragStartCenterRef.current.x + dx,
+                centerY: dragStartCenterRef.current.y + dy,
+              });
+              return;
+            }
+
+            const point = points.find((p) => p.id === id);
+            if (!point) return;
+            const center = {
+              x: point.params.centerX,
+              y: point.params.centerY,
+            };
+
+            if (kind === "radius" && point.type === "circle") {
+              const radius = Math.min(
+                250,
+                Math.max(10, Math.hypot(world.x - center.x, world.y - center.y)),
+              );
+              onPointParamsChange(id, { radius });
+              return;
+            }
+
+            if (
+              (kind === "endpoint1" || kind === "endpoint2") &&
+              point.type === "linear"
+            ) {
+              let vx = world.x - center.x;
+              let vy = world.y - center.y;
+              if (kind === "endpoint1") {
+                vx = -vx;
+                vy = -vy;
+              }
+              const amplitude = Math.min(250, Math.max(10, Math.hypot(vx, vy)));
+              const angleDeg = (((Math.atan2(vy, vx) * 180) / Math.PI) + 360) % 360;
+              onPointParamsChange(id, { amplitude, angleDeg });
+            }
           }}
           onPointerUp={(e) => {
             if (draggingIdRef.current) {
               canvasRef.current?.releasePointerCapture(e.pointerId);
             }
             draggingIdRef.current = null;
+            dragKindRef.current = null;
             setIsDragging(false);
           }}
           onPointerCancel={() => {
             draggingIdRef.current = null;
+            dragKindRef.current = null;
             setIsDragging(false);
           }}
           style={{

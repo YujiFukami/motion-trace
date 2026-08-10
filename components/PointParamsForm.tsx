@@ -4,11 +4,9 @@ import { useLocale } from "@/lib/i18n/LocaleContext";
 
 interface CircleFormProps {
   type: "circle";
-  radius: number;
   period: number;
   initialPhase: number;
   clockwise: boolean;
-  onRadiusChange: (value: number) => void;
   onPeriodChange: (value: number) => void;
   onInitialPhaseChange: (value: number) => void;
   onClockwiseChange: (value: boolean) => void;
@@ -16,14 +14,10 @@ interface CircleFormProps {
 
 interface LinearFormProps {
   type: "linear";
-  amplitude: number;
   period: number;
   initialPhase: number;
-  angleDeg: number;
-  onAmplitudeChange: (value: number) => void;
   onPeriodChange: (value: number) => void;
   onInitialPhaseChange: (value: number) => void;
-  onAngleChange: (value: number) => void;
 }
 
 export type PointParamsFormProps = CircleFormProps | LinearFormProps;
@@ -40,72 +34,28 @@ export default function PointParamsForm(props: PointParamsFormProps) {
         ）
       </h3>
 
-      {props.type === "circle" ? (
-        <>
-          <NumberField
-            label={t("pointForm.radius")}
-            value={props.radius}
-            min={10}
-            max={250}
-            step={5}
-            onChange={props.onRadiusChange}
-          />
-          <NumberField
-            label={t("pointForm.period")}
-            value={props.period}
-            min={0.5}
-            max={20}
-            step={0.5}
-            onChange={props.onPeriodChange}
-          />
-          <NumberField
-            label={t("pointForm.phase")}
-            value={props.initialPhase}
-            min={0}
-            max={1}
-            step={0.05}
-            onChange={props.onInitialPhaseChange}
-          />
-          <DirectionToggle
-            clockwise={props.clockwise}
-            onChange={props.onClockwiseChange}
-          />
-        </>
-      ) : (
-        <>
-          <NumberField
-            label={t("pointForm.amplitude")}
-            value={props.amplitude}
-            min={10}
-            max={250}
-            step={5}
-            onChange={props.onAmplitudeChange}
-          />
-          <NumberField
-            label={t("pointForm.period")}
-            value={props.period}
-            min={0.5}
-            max={20}
-            step={0.5}
-            onChange={props.onPeriodChange}
-          />
-          <NumberField
-            label={t("pointForm.angle")}
-            value={props.angleDeg}
-            min={0}
-            max={360}
-            step={5}
-            onChange={props.onAngleChange}
-          />
-          <NumberField
-            label={t("pointForm.phase")}
-            value={props.initialPhase}
-            min={0}
-            max={1}
-            step={0.05}
-            onChange={props.onInitialPhaseChange}
-          />
-        </>
+      <NumberField
+        label={t("pointForm.period")}
+        value={props.period}
+        min={0.5}
+        max={20}
+        step={0.5}
+        onChange={props.onPeriodChange}
+      />
+      <NumberField
+        label={t("pointForm.phase")}
+        value={props.initialPhase}
+        min={0}
+        max={1}
+        step={0.05}
+        onChange={props.onInitialPhaseChange}
+      />
+
+      {props.type === "circle" && (
+        <DirectionToggle
+          clockwise={props.clockwise}
+          onChange={props.onClockwiseChange}
+        />
       )}
     </div>
   );

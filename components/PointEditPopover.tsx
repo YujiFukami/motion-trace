@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import PointParamsForm from "./PointParamsForm";
 import type {
   CircleMotionParams,
@@ -15,8 +15,6 @@ function radiansToCycleFraction(radians: number): number {
 
 export interface PointEditPopoverProps {
   point: PlacedPoint;
-  x: number;
-  y: number;
   onChange: (
     params: Partial<CircleMotionParams> | Partial<LinearMotionParams>,
   ) => void;
@@ -26,25 +24,12 @@ export interface PointEditPopoverProps {
 
 export default function PointEditPopover({
   point,
-  x,
-  y,
   onChange,
   onDelete,
   onClose,
 }: PointEditPopoverProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [pos, setPos] = useState({ left: x, top: y });
   const { t } = useLocale();
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const margin = 8;
-    const left = Math.min(x, window.innerWidth - rect.width - margin);
-    const top = Math.min(y, window.innerHeight - rect.height - margin);
-    setPos({ left: Math.max(margin, left), top: Math.max(margin, top) });
-  }, [x, y]);
 
   useEffect(() => {
     function handlePointerDown(e: MouseEvent) {
@@ -57,47 +42,39 @@ export default function PointEditPopover({
   }, [onClose]);
 
   return (
-    <div
-      ref={ref}
-      style={{ position: "fixed", left: pos.left, top: pos.top }}
-      className="z-50 flex w-64 flex-col gap-2 drop-shadow-xl"
-    >
-      {point.type === "circle" ? (
-        <PointParamsForm
-          type="circle"
-          radius={point.params.radius}
-          period={point.params.period}
-          initialPhase={radiansToCycleFraction(point.params.initialPhase)}
-          clockwise={point.params.clockwise}
-          onRadiusChange={(radius) => onChange({ radius })}
-          onPeriodChange={(period) => onChange({ period })}
-          onInitialPhaseChange={(frac) =>
-            onChange({ initialPhase: frac * 2 * Math.PI })
-          }
-          onClockwiseChange={(clockwise) => onChange({ clockwise })}
-        />
-      ) : (
-        <PointParamsForm
-          type="linear"
-          amplitude={point.params.amplitude}
-          period={point.params.period}
-          initialPhase={radiansToCycleFraction(point.params.initialPhase)}
-          angleDeg={point.params.angleDeg}
-          onAmplitudeChange={(amplitude) => onChange({ amplitude })}
-          onPeriodChange={(period) => onChange({ period })}
-          onInitialPhaseChange={(frac) =>
-            onChange({ initialPhase: frac * 2 * Math.PI })
-          }
-          onAngleChange={(angleDeg) => onChange({ angleDeg })}
-        />
-      )}
-      <button
-        type="button"
-        onClick={onDelete}
-        className="rounded-md bg-red-500/80 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500"
-      >
-        {t("pointForm.delete")}
-      </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div ref={ref} className="flex w-64 flex-col gap-2 drop-shadow-xl">
+        {point.type === "circle" ? (
+          <PointParamsForm
+            type="circle"
+            period={point.params.period}
+            initialPhase={radiansToCycleFraction(point.params.initialPhase)}
+            clockwise={point.params.clockwise}
+            onPeriodChange={(period) => onChange({ period })}
+            onInitialPhaseChange={(frac) =>
+              onChange({ initialPhase: frac * 2 * Math.PI })
+            }
+            onClockwiseChange={(clockwise) => onChange({ clockwise })}
+          />
+        ) : (
+          <PointParamsForm
+            type="linear"
+            period={point.params.period}
+            initialPhase={radiansToCycleFraction(point.params.initialPhase)}
+            onPeriodChange={(period) => onChange({ period })}
+            onInitialPhaseChange={(frac) =>
+              onChange({ initialPhase: frac * 2 * Math.PI })
+            }
+          />
+        )}
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-md bg-red-500/80 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500"
+        >
+          {t("pointForm.delete")}
+        </button>
+      </div>
     </div>
   );
 }

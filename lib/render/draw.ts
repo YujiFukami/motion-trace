@@ -97,3 +97,20 @@ export function drawGuideLine(
   ctx.stroke();
   ctx.setLineDash([]);
 }
+
+export function drawCenterMark(
+  ctx: CanvasRenderingContext2D,
+  center: Point2D,
+  size: number,
+  color: string,
+): void {
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(center.x - size, center.y - size);
+  ctx.lineTo(center.x + size, center.y + size);
+  ctx.moveTo(center.x + size, center.y - size);
+  ctx.lineTo(center.x - size, center.y + size);
+  ctx.stroke();
+}

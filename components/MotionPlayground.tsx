@@ -21,6 +21,10 @@ import {
 import { decodeSceneFromParam, encodeSceneToParam } from "@/lib/scene/shareLink";
 import { generateRandomScene } from "@/lib/scene/randomScene";
 import { useLocale } from "@/lib/i18n/LocaleContext";
+import type {
+  CircleMotionParams,
+  LinearMotionParams,
+} from "@/lib/motion/types";
 
 type PopoverState =
   | { kind: "point"; pointId: string; x: number; y: number }
@@ -83,8 +87,11 @@ export default function MotionPlayground() {
     }
   }
 
-  function handlePointMove(id: string, centerX: number, centerY: number) {
-    dispatch({ type: "UPDATE_POINT_PARAMS", id, params: { centerX, centerY } });
+  function handlePointParamsChange(
+    id: string,
+    params: Partial<CircleMotionParams> | Partial<LinearMotionParams>,
+  ) {
+    dispatch({ type: "UPDATE_POINT_PARAMS", id, params });
   }
 
   function handleTogglePlay() {
@@ -232,7 +239,7 @@ export default function MotionPlayground() {
             colors={colors}
             onCanvasClick={handleCanvasClick}
             onCanvasContextMenu={handleCanvasContextMenu}
-            onPointMove={handlePointMove}
+            onPointParamsChange={handlePointParamsChange}
             onTogglePlay={handleTogglePlay}
             onReset={handleReset}
             onClearTrail={handleClearTrail}
@@ -277,8 +284,6 @@ export default function MotionPlayground() {
       {popover?.kind === "point" && editingPoint && (
         <PointEditPopover
           point={editingPoint}
-          x={popover.x}
-          y={popover.y}
           onChange={(params) =>
             dispatch({
               type: "UPDATE_POINT_PARAMS",

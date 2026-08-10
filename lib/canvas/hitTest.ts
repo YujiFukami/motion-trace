@@ -32,3 +32,15 @@ export function hitTestSegment(
   const ddy = pos.y - closestY;
   return ddx * ddx + ddy * ddy <= maxDist * maxDist;
 }
+
+export function hitTestCircleEdge(
+  pos: Point2D,
+  center: Point2D,
+  radius: number,
+  tolerance: number,
+): boolean {
+  const dx = pos.x - center.x;
+  const dy = pos.y - center.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  return Math.abs(dist - radius) <= tolerance;
+}
