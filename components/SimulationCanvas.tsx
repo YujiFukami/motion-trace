@@ -150,13 +150,11 @@ export default function SimulationCanvas({
   const connectStartIdRef = useRef(connectStartId);
   const showGuidesRef = useRef(showGuides);
   const isPlayingRef = useRef(isPlaying);
-  const modeRef = useRef(mode);
   useEffect(() => {
     connectionsRef.current = connections;
     connectStartIdRef.current = connectStartId;
     showGuidesRef.current = showGuides;
     isPlayingRef.current = isPlaying;
-    modeRef.current = mode;
   });
 
   // Shared draw path used both by the RAF loop (recordTrail: true) and by a
@@ -213,32 +211,23 @@ export default function SimulationCanvas({
       drawCurrentLine(ctx, p1, p2, CURRENT_LINE_WIDTH, colors.line);
     }
 
-    const showAllGuidesForEditing = modeRef.current === "select";
     for (const p of points) {
-      if (
-        !showGuidesRef.current &&
-        p.id !== editingPointId &&
-        !showAllGuidesForEditing
-      ) {
-        continue;
-      }
+      if (!showGuidesRef.current && p.id !== editingPointId) continue;
       const guide = getRangeGuide(p);
       if (guide.type === "circle") {
         drawGuideCircle(ctx, guide.center, guide.radius, GUIDE_COLOR);
       } else {
         drawGuideLine(ctx, guide.p1, guide.p2, GUIDE_COLOR);
       }
-      if (showAllGuidesForEditing) {
-        drawCenterMark(
-          ctx,
-          { x: p.params.centerX, y: p.params.centerY },
-          CENTER_MARK_SIZE,
-          GUIDE_COLOR,
-        );
-        if (guide.type === "linear") {
-          drawPointHighlight(ctx, guide.p1, ENDPOINT_MARK_RADIUS, GUIDE_COLOR);
-          drawPointHighlight(ctx, guide.p2, ENDPOINT_MARK_RADIUS, GUIDE_COLOR);
-        }
+      drawCenterMark(
+        ctx,
+        { x: p.params.centerX, y: p.params.centerY },
+        CENTER_MARK_SIZE,
+        GUIDE_COLOR,
+      );
+      if (guide.type === "linear") {
+        drawPointHighlight(ctx, guide.p1, ENDPOINT_MARK_RADIUS, GUIDE_COLOR);
+        drawPointHighlight(ctx, guide.p2, ENDPOINT_MARK_RADIUS, GUIDE_COLOR);
       }
     }
 
@@ -355,6 +344,13 @@ export default function SimulationCanvas({
     return { hit: { kind: "empty" }, world };
   }
 
+  // The center mark / endpoint handles / circle edge are only grabbable
+  // when their guide is actually drawn (showGuides toggle, or this point
+  // is the one currently being edited) — never an invisible hit target.
+  function isGuideVisible(pointId: string): boolean {
+    return showGuidesRef.current || pointId === editingPointId;
+  }
+
   // Priority order for select-mode drags: the static center mark (easiest
   // to grab reliably since it never moves) → linear endpoint handles →
   // the circle guide's edge → finally the live, moving dot itself (the
@@ -368,13 +364,14 @@ export default function SimulationCanvas({
     const world = clientToWorld(canvas, clientX, clientY);
 
     for (const p of points) {
+      if (!isGuideVisible(p.id)) continue;
       const center = { x: p.params.centerX, y: p.params.centerY };
       if (hitTestPoint(world, center, POINT_HIT_RADIUS)) {
         return { kind: "center", id: p.id, world };
       }
     }
     for (const p of points) {
-      if (p.type !== "linear") continue;
+      if (p.type !== "linear" || !isGuideVisible(p.id)) continue;
       const guide = getRangeGuide(p);
       if (guide.type !== "linear") continue;
       if (hitTestPoint(world, guide.p1, ENDPOINT_HIT_RADIUS)) {
@@ -385,7 +382,7 @@ export default function SimulationCanvas({
       }
     }
     for (const p of points) {
-      if (p.type !== "circle") continue;
+      if (p.type !== "circle" || !isGuideVisible(p.id)) continue;
       const center = { x: p.params.centerX, y: p.params.centerY };
       if (hitTestCircleEdge(world, center, p.params.radius, LINE_HIT_DIST)) {
         return { kind: "radius", id: p.id, world };
